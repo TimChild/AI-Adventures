@@ -1,0 +1,66 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <script type="module">
+            import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        </script>
+        <script>mermaid.initialize({startOnLoad:true, securityLevel: 'loose', theme: 'dark'});</script>
+    </head>
+    <body>
+        <pre class="mermaid"> 
+            
+classDiagram
+    Class GameState
+    Class PersistentState
+    Class AgentState
+    Class FriendlyAgentState
+    Class EnemyAgentState
+    Class Env
+    Class Agent
+    Class Plan
+    Class FactoryPlan
+    Class BalancedFactory
+    Class MetalFactory
+    Class WaterFactory
+    Class PowerFactory
+    Class ActionPlan
+    Class CombatPlan
+    Class GuardResource
+    Class GuardLichen
+    Class Attack
+    Class Kamikazee
+    Class Waiting
+    Class SolarPanel
+    Class Mining
+    Class Clearing
+    Class RubbleClearing
+    Class LichenClearing
+    Class Transport
+
+    GameState <|-- PersistentState
+    AgentState <|-- FriendlyAgentState
+    AgentState <|-- EnemyAgentState
+    Plan <|-- FactoryPlan
+    Plan <|-- ActionPlan
+    FactoryPlan <|-- BalancedFactory
+    FactoryPlan <|-- MetalFactory
+    FactoryPlan <|-- WaterFactory
+    FactoryPlan <|-- PowerFactory
+    ActionPlan <|-- CombatPlan
+    CombatPlan <|-- GuardResource
+    CombatPlan <|-- GuardLichen
+    CombatPlan <|-- Attack
+    CombatPlan <|-- Kamikazee
+    ActionPlan <|-- Waiting
+    ActionPlan <|-- SolarPanel
+    ActionPlan <|-- Mining
+    ActionPlan <|-- Clearing
+    Clearing <|-- RubbleClearing
+    Clearing <|-- LichenClearing
+    ActionPlan <|-- Transport
+
+        </pre>
+    </body>
+    </html lang="en">
+    

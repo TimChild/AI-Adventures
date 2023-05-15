@@ -1,0 +1,36 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <script type="module">
+                import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+            </script>
+            <script>mermaid.initialize({startOnLoad:true, securityLevel: 'loose', theme: 'dark', 
+                flowchart: {
+                    useMaxWidth: true, // Disable maximum width for better zooming
+                    htmlLabels: true, // Enable HTML-based labels for better styling
+                    defaultRenderer: "elk", // Makes connections linear, ugly but good for large graphs
+                },
+            });
+            </script>
+        </head>
+        <body>
+            
+        <pre class="mermaid">
+            
+        </pre>
+        
+
+        <pre class="mermaid">
+            graph LR
+A --> B
+B --> C
+D --> A
+D --> B
+D --> C
+
+        </pre>
+        
+        </body>
+        </html lang="en">
+        
