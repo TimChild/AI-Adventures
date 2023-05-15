@@ -17,12 +17,17 @@
         <body>
             
         <pre class="mermaid">
-            graph LR
-A --> B
-B --> C
-D --> A
-D --> B
-D --> C
+            classDiagram
+    class TestA{
+        +void __init__()
+    }
+    class TestB{
+        +void __init__()
+    }
+    class DifferentClass{
+        +void __init__()
+    }
+    TestB <|-- TestA
         </pre>
         
         </body>

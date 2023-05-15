@@ -3,6 +3,15 @@ import openai
 from typing import List
 
 
+# TODO: remove this from here
+import openai
+
+with open(r'D:\GitHub\ai_adventures\API_KEY', "r") as f:
+    key = f.read()
+
+openai.api_key = key
+
+
 def split_text(text, split_words) -> List[str]:
     """Split chunk of text on any lines that contain a word from split_words"""
     # Split the text into lines
