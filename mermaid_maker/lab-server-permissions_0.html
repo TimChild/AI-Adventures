@@ -18,11 +18,20 @@
             
         <pre class="mermaid">
             graph LR
-A --> B
-B --> C
-D --> A
-D --> B
-D --> C
+jfolk["jfolk"]
+labuser["labuser"]
+measurement-pc["measurement-pc"]
+folders["measurement-data, shared"]
+jfolk -- owns --> folders
+labuser -- read/execute --> measurement-data
+labuser -- read/write/execute --> shared
+measurement-pc -- read/write/execute --> measurement-data
+measurement-pc -- read/write/execute --> shared
+subgraph Users
+jfolk
+labuser
+measurement-pc
+end
         </pre>
         
         </body>

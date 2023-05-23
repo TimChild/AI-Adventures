@@ -21,10 +21,13 @@ def split_text(text, split_words) -> List[str]:
     chunk = []
     chunks = []
 
+    # Prepare regex pattern with word boundaries
+    patterns = [re.compile(rf'\b{word}\b') for word in split_words]
+
     # Iterate over the lines
     for line in lines:
         # If the line contains any of the split words, create a new chunk
-        if any(word in line for word in split_words):
+        if any(pattern.search(line) for pattern in patterns):
             # Only add non-empty chunks
             if chunk:
                 chunks.append('\n'.join(chunk))
@@ -168,7 +171,7 @@ class MermaidGenerator:
         <body>
             {mm_pre_string}
         </body>
-        </html lang="en">
+        </html>
         """
         with open(filename, "w") as f:
             f.write(content)
