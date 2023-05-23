@@ -154,3 +154,7 @@ API_KEY
 
 plugin json downloader/ai-plugins/
 plugin json downloader/websites.txt
+langchain_test/igor_help_files_txt/
+*.ihf
+langchain_test/faiss_dbs
+langchain_test/pdfs
