@@ -158,3 +158,5 @@ langchain_test/igor_help_files_txt/
 *.ihf
 langchain_test/faiss_dbs
 langchain_test/pdfs
+SERPAPI_KEY
+WOLFRAM_KEY
