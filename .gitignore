@@ -160,3 +160,7 @@ langchain_test/faiss_dbs
 langchain_test/pdfs
 SERPAPI_KEY
 WOLFRAM_KEY
+igor_doc_bot/chat_history/
+igor_doc_bot/faiss_dbs/
+igor_doc_bot/igor_help_files_txt/
+igor_doc_bot/pdfs/
