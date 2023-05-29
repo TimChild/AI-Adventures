@@ -10,7 +10,7 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.prompts import PromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate
-
+import langchain.agents
 import os
 import datetime
 
@@ -23,13 +23,38 @@ os.makedirs(HISTORY_FOLDER, exist_ok=True)
 embedding = OpenAIEmbeddings()
 db = FAISS.load_local("faiss_dbs", embeddings=embedding, index_name="igor-test")
 
+# CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template("""
+# Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+#
+# Chat History:
+# {chat_history}
+# Follow Up Input: {question}
+# Standalone question:
+# """)
 CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template("""
-Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+Given the following conversation history: 
 
-Chat History:
+---------------
+CONVERSATION HISTORY:
 {chat_history}
-Follow Up Input: {question}
-Standalone question:
+---------------
+
+and follow up question:
+
+---------------
+FOLLOW UP QUESTION: 
+{question}
+---------------
+
+Make a list of the information from the CONVERSATION HISTORY that is relevant to the FOLLOW UP QUESTION (condensing the information when possible), then rephrase the follow up question to be a standalone question. You should format your response like:
+---------------
+Possibly Relevant info:
+- <relevant info 1>
+- <relevant info 2>
+- etc
+
+<standalone question here>
+---------------
 """)
 
 GENERATE_ANSWER_SYSTEM_PROMPT = """Use the following pieces of context that come from the "Igor Help Files" to answer the users question. 
