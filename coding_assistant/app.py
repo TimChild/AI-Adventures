@@ -4,16 +4,11 @@ import dash_bootstrap_components as dbc
 from dash import Input, Output, State
 from dash import dcc
 
-from langchain.vectorstores import FAISS
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.chains.question_answering import load_qa_chain
-from langchain.chat_models import ChatOpenAI
-from langchain.chains import ConversationalRetrievalChain
-from langchain.prompts import PromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate
-import langchain.agents
 import os
 import uuid
 import datetime
+
+from codai import generate_response
 
 
 with open('../API_KEY', 'r') as f:
@@ -65,10 +60,16 @@ error_messages_input = html.Div(
     className="mb-3",
 )
 
+
 inputs_layout = dbc.Form([text_prompt_input, existing_code_input, error_messages_input])
 
-# Define the options
-options_button = dbc.Button("Options/Preferences", id="open", className="mr-1")
+input_submit = dbc.Button(children='Submit', id='input-submit', color='success', className='mr-1')
+options_button = dbc.Button("Options/Preferences", id="open", color='primary', className="mr-1")
+
+button_group = dbc.ButtonGroup(
+    [input_submit, options_button],
+    className="mb-3 custom-button-group"
+)
 
 options_modal = dbc.Modal(
     [
@@ -81,7 +82,7 @@ options_modal = dbc.Modal(
     id="modal",
 )
 
-options_layout = html.Div([options_button, options_modal])
+options_layout = html.Div([button_group, options_modal])
 
 inputs_card = dbc.Card(
     [
@@ -158,8 +159,6 @@ def toggle_modal(n1, n2, is_open):
 
 
 
-
-
 @app.callback(
     Output('store-session-id', 'data'),
     Input('page-load', 'pathname'),
@@ -185,9 +184,30 @@ def save_chat_history_to_file(chat_history, folder_path, session_id):
             file.write('\n\n'.join(item) + '\n ============= \n')
 
 
-
 def history_to_text(history):
     return '\n'.join([f'Human: {h[0]}\nAI: {h[1]}' for h in history])
+
+
+
+@app.callback(
+    Output('generated-code-display', 'children'),
+    Input('input-submit', 'n_clicks'),
+    State('text-prompt-input', 'value'),
+    State('existing-code-input', 'value'),
+    State('error-messages-input', 'value'),
+    # Input('store-session-id', 'data'),
+    # State('store-chat-history', 'data'),
+)
+def update_chat_history(n_clicks, text_prompt_input, existing_code_input, error_messages_input):#, session_id, chat_history):
+    if not n_clicks:
+        return ''
+    if text_prompt_input or existing_code_input or error_messages_input:
+        response = generate_response(text_prompt_input, existing_code_input, error_messages_input)
+        return response.code
+    return 'No input provided'
+
+
+
 
 
 
