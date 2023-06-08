@@ -8,11 +8,13 @@ from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chat_models import ChatOpenAI
-from langchain.chains import ConversationalRetrievalChain, ConversationChain, LLMChain, SequentialChain
+from langchain.chains import ConversationalRetrievalChain
 from langchain.prompts import PromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate
-
+import langchain.agents
 import os
+import uuid
 import datetime
+
 
 with open('../API_KEY', 'r') as f:
     os.environ['OPENAI_API_KEY'] = f.read()
@@ -20,155 +22,184 @@ with open('../API_KEY', 'r') as f:
 HISTORY_FOLDER = 'chat_history'
 os.makedirs(HISTORY_FOLDER, exist_ok=True)
 
-# embedding = OpenAIEmbeddings()
-# db = FAISS.load_local("faiss_dbs", embeddings=embedding, index_name="test")
 
-
-CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template("""
-Given the following conversation and follow up question:
-
----------------
-
-Chat History:
-{chat_history}
-Follow Up Input: {question}
-
----------------
-
-Rephrase the follow up question to be a standalone question, in its original language. 
-
-Standalone question:
-""")
-condense_input_chain = LLMChain(llm=ChatOpenAI(temperature=0.0), prompt=CONDENSE_QUESTION_PROMPT)
-
-GENERATE_ANSWER_SYSTEM_PROMPT = """Use the following pieces of context that come from the "Igor Help Files" to answer the users question. 
------------------------
-
-{context}
-
------------------------
-
-
-When writing your answer to the users question you should follow these rules:
-- If you don't know the answer, don't try to make up an answer, instead, tell the user that they should try reformatting their question or include more context with their question because you are having a hard time finding relevant information in the "Igor Help Files". 
-- When appropriate, give a short code example at the end of your answer.
-- Always format responses in Markdown.
-- It is absolutely crucial that you give your responses formatted in Markdown, especially any part of the answer that contains code should be enclosed by triple back-ticks
-"""
-
-generate_answer_chain = LLMChain(ChatOpenAI(temperature=0.0), prompt=GENERATE_ANSWER_SYSTEM_PROMPT)
-
-
-# - You should always include references to where the user can find more information in the "Igor Help Files" based on the context above.
-
-GENERATE_ANSWER_MESSAGES = [
-    SystemMessagePromptTemplate.from_template(GENERATE_ANSWER_SYSTEM_PROMPT),
-    HumanMessagePromptTemplate.from_template("{question}"),
-]
-GENERATE_ANSWER_PROMPT = ChatPromptTemplate.from_messages(GENERATE_ANSWER_MESSAGES)
-
-doc_chain = load_qa_chain(
-    llm,
-    chain_type=chain_type,
-    verbose=verbose,
-    **combine_docs_chain_kwargs,
-)
-condense_question_chain = LLMChain(
-    llm=llm, prompt=condense_question_prompt, verbose=verbose
-)
-qa = ConversationChain.from_string(ChatOpenAI(temperature=0.0), )
-
-# qa = ConversationalRetrievalChain.from_llm(ChatOpenAI(temperature=0.0), db.as_retriever(k=3), max_tokens_limit=3000, condense_question_prompt=CONDENSE_QUESTION_PROMPT, combine_docs_chain_kwargs=dict(prompt=GENERATE_ANSWER_PROMPT), verbose=False)
-
-chat_history = []
-
-
-def make_markdown(history, answer):
-    # Reverse the history list
-    history = history[::-1]
-
-    # Convert history list into a markdown formatted string, displaying each tuple as a question and answer
-    history_md = '### History:\n\n'+'\n'.join(f'**Question:** {item[0]}\n\n**Answer:** {item[1]}\n\n' for item in history)
-
-    # Combine the latest answer and the history into a single markdown formatted string
-    markdown_string = f'### Latest Answer:\n\n{answer}\n\n{history_md}'
-
-    return markdown_string
+def generate_id():
+    current_datetime = datetime.datetime.now()
+    return current_datetime.strftime("%Y%m%d_%H%M%S")
 
 
 # Build the app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], url_base_pathname='/igor-doc-bot/')
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], url_base_pathname='/pythia/', title='Pythia')
 
 
-history_store = dcc.Store(id='store-history', data=[])
+store_session_id = dcc.Store(id='store-session-id', data=generate_id())
+store_chat_history = dcc.Store(id='store-chat-history', data=[])
 
-app.layout = dbc.Container(
-    dbc.Row(
-        dbc.Col(
-            [
-                html.H1("Igor Doc Bot", className="text-center"),
-                html.H4("Ask me anything where you would expect the answer to be in the Igor .ihf files", className="text-center"),
-                dbc.Form(
-                    [
-                        dbc.Row(
-                            [
-                                # dbc.Col(dbc.Input(id="input-box", placeholder="E.g. How can I display a 2D wave? (include an example)")),
-                                dbc.Col(dcc.Textarea(id="input-box", placeholder="E.g. How can I display a 2D wave? (include an example)", style={'width': '100%', 'height': 100})),
-                                dbc.Col(dbc.Button("Submit", id="submit-button", color="primary")),
-                            ],
-                        ),
-                    ],
-                    className="mt-3",
-                ),
-                dcc.Markdown(id="markdown-cell"),
-                history_store,
-            ],
-            width=6,
+session_tracker_layout = html.Div([
+    dcc.Location(id='page-load', refresh=True),
+    store_session_id,
+    ])
+
+# Define the text inputs
+text_prompt_input = html.Div(
+    [
+        dbc.Label("Enter General Text Prompt", html_for='text-prompt-input'),
+        dcc.Textarea(id='text-prompt-input', style={'width': '100%', 'height': 100}),
+    ],
+    className="mb-3",
+)
+
+existing_code_input = html.Div(
+    [
+        dbc.Label("Copy in Existing Code", html_for='existing-code-input'),
+        dcc.Textarea(id='existing-code-input', style={'width': '100%', 'height': 100}),
+    ],
+    className="mb-3",
+)
+
+error_messages_input = html.Div(
+    [
+        dbc.Label("Copy in Error Messages", html_for='error-messages-input'),
+        dcc.Textarea(id='error-messages-input', style={'width': '100%', 'height': 100}),
+    ],
+    className="mb-3",
+)
+
+inputs_layout = dbc.Form([text_prompt_input, existing_code_input, error_messages_input])
+
+# Define the options
+options_button = dbc.Button("Options/Preferences", id="open", className="mr-1")
+
+options_modal = dbc.Modal(
+    [
+        dbc.ModalHeader("Options/Preferences"),
+        dbc.ModalBody(dcc.Input(id="input")),
+        dbc.ModalFooter(
+            dbc.Button("Close", id="close", className="ml-auto")
         ),
-        justify="center",
-    ),
-    className="mt-5",
+    ],
+    id="modal",
+)
+
+options_layout = html.Div([options_button, options_modal])
+
+inputs_card = dbc.Card(
+    [
+        dbc.CardHeader("Inputs"),
+        dbc.CardBody([inputs_layout, options_layout]),
+    ],
+    className="mb-3",
 )
 
 
-def save_list_to_text_file(data, folder_path):
-    current_datetime = datetime.datetime.now()
-    filename = current_datetime.strftime("%Y%m%d_%H%M%S.txt")
+# Define the display outputs
+generated_code_display = dbc.Card(
+    [
+        dbc.CardHeader("Generated Code"),
+        dbc.CardBody(dcc.Markdown(id='generated-code-display')),
+    ],
+    className="mb-3",
+)
 
-    with open(os.path.join(folder_path,  filename), 'w') as file:
-        for item in data:
-            file.write('\n\n'.join(item) + '\n ============= \n')
+summaries_display = dbc.Card(
+    [
+        dbc.CardHeader("Summaries"),
+        dbc.CardBody(dcc.Markdown(id='summaries-display')),
+    ],
+    className="mb-3",
+)
+
+thought_process_display = dbc.Card(
+    [
+        dbc.CardHeader("Thought Processes"),
+        dbc.CardBody(dcc.Markdown(id='thought-process-display')),
+    ],
+    className="mb-3",
+)
+
+outputs_layout = html.Div([generated_code_display, summaries_display, thought_process_display])
+
+
+# Combine everything into the overall layout
+app.layout = html.Div(
+    [
+        session_tracker_layout,  # Existing variable that should be at the top of the layout
+        dbc.Container(
+            [
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            inputs_card,
+                            xl=6,  # half the width on extra large screens
+                        ),
+                        dbc.Col(
+                            outputs_layout,
+                            xl=6,  # half the width on extra large screens
+                        ),
+                    ]
+                ),
+            ],
+            className="mt-4",
+        )
+    ]
+)
+
+
+# Define callback
+@app.callback(
+    Output("modal", "is_open"),
+    [Input("open", "n_clicks"), Input("close", "n_clicks")],
+    [dash.dependencies.State("modal", "is_open")],
+)
+def toggle_modal(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
+
+
+
 
 
 @app.callback(
-    Output('markdown-cell', 'children'),
-    Output('store-history', 'data'),
-    Input('submit-button', 'n_clicks'),
-    State('input-box', 'value'),
-    State('store-history', 'data'),
+    Output('store-session-id', 'data'),
+    Input('page-load', 'pathname'),
 )
-def update_markdown(n_clicks, query, chat_history):
-    chat_history = [tuple(hist) for hist in chat_history]
-    if n_clicks:
-        result = qa({'question': query, 'chat_history': chat_history})
-        chat_history.append((query,  result['answer']))
-        md = make_markdown(chat_history, result['answer'])
-        save_list_to_text_file(chat_history, HISTORY_FOLDER)
+def update_session_id(pathname):
+    return generate_id()
 
-        return md, chat_history
 
-    return "", chat_history
+def make_markdown(history):
+    md_string = ''
+    if history:
+        # Convert history list into a markdown formatted string, displaying each tuple as a question and answer
+        md_string = '\n'.join(f'**Question:**\n{item[0]}\n\n**Response:**\n{item[1]}\n\n' for item in history)
+        md_string += '\n\n---'
+    return md_string
+
+
+def save_chat_history_to_file(chat_history, folder_path, session_id):
+    filename = f'{session_id}.txt'
+
+    with open(os.path.join(folder_path,  filename), 'w', encoding='utf-8') as file:
+        for item in chat_history:
+            file.write('\n\n'.join(item) + '\n ============= \n')
+
+
+
+def history_to_text(history):
+    return '\n'.join([f'Human: {h[0]}\nAI: {h[1]}' for h in history])
+
 
 
 if __name__ == "__main__":
-    # app.run(
-    #     port=8085,
-    #     debug=True,
-    #     dev_tools_hot_reload=True,
-    # )
     app.run(
-        host='0.0.0.0',
-        port=8080,
-        debug=False,
-        dev_tools_hot_reload=False,
+        port=8083,
+        debug=True,
+        dev_tools_hot_reload=True,
     )
+    # app.run(
+    #     host='0.0.0.0',
+    #     port=8081,
+    #     debug=False,
+    #     dev_tools_hot_reload=False,
+    # )
