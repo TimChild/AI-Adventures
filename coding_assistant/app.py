@@ -68,6 +68,17 @@ existing_code_input = html.Div(
     className="mb-3",
 )
 
+project_context_input = html.Div(
+    [
+        dbc.Label("Copy in Project Description", html_for="project-context-input"),
+        dcc.Textarea(id="project-context-input", style={"width": "100%", "height": 100},
+                     persistence=True,
+                     persistence_type="local",
+                     ),
+    ],
+    className="mb-3",
+)
+
 error_messages_input = html.Div(
     [
         dbc.Label("Copy in Error Messages", html_for="error-messages-input"),
@@ -80,7 +91,7 @@ error_messages_input = html.Div(
 )
 
 
-inputs_layout = dbc.Form([text_prompt_input, existing_code_input, error_messages_input])
+inputs_layout = dbc.Form([text_prompt_input, existing_code_input, project_context_input, error_messages_input])
 
 input_submit = dbc.Button(
     children="Submit", id="input-submit", color="success", className="mr-1"
@@ -217,18 +228,19 @@ def history_to_text(history):
     Input("input-submit", "n_clicks"),
     State("text-prompt-input", "value"),
     State("existing-code-input", "value"),
+    State("project-context-input", "value"),
     State("error-messages-input", "value"),
     # Input('store-session-id', 'data'),
     # State('store-chat-history', 'data'),
 )
 def update_chat_history(
-    n_clicks, text_prompt_input, existing_code_input, error_messages_input
+    n_clicks, text_prompt_input, existing_code_input, project_context_input, error_messages_input
 ):  # , session_id, chat_history):
     if not n_clicks:
         return ""
     if text_prompt_input or existing_code_input or error_messages_input:
         response = generate_response(
-            text_prompt_input, existing_code_input, error_messages_input
+            text_prompt_input, existing_code_input, project_context_input, error_messages_input
         )
         return response.code
     return "No input provided"
