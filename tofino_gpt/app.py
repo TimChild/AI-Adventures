@@ -3,6 +3,7 @@ from dash import html
 import dash_bootstrap_components as dbc
 from dash import Input, Output, State
 from dash import dcc
+import argparse
 
 from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
@@ -33,7 +34,8 @@ def generate_id():
 
 
 # Build the app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], url_base_pathname='/tofino/')
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], url_base_pathname='/tofino/', title='Tofino')
+
 
 
 store_session_id = dcc.Store(id='store-session-id', data=generate_id())
@@ -336,15 +338,22 @@ def make_image(n_clicks, prompt, persona, session_id):
         return html.Img(src=image_url, style={'width': '100%'})
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--live", action="store_true", help="Run in live mode")
+args = parser.parse_args()
+
 if __name__ == "__main__":
-    # app.run(
-    #     port=8082,
-    #     debug=True,
-    #     dev_tools_hot_reload=True,
-    # )
-    app.run(
-        host='0.0.0.0',
-        port=8081,
-        debug=False,
-        dev_tools_hot_reload=False,
-    )
+    if args.live:
+        app.run(
+            host='0.0.0.0',
+            port=8081,
+            debug=False,
+            dev_tools_hot_reload=False,
+        )
+    else:
+        app.title = f'Development - {app.title}'
+        app.run(
+            port=8082,
+            debug=True,
+            dev_tools_hot_reload=True,
+        )
