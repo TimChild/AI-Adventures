@@ -167,3 +167,4 @@ igor_doc_bot/pdfs/
 tofino_gpt/chat_history/
 tofino_gpt/image_history/
 langchain_test/rtdocs/
+*.png

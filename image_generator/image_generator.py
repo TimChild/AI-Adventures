@@ -19,7 +19,7 @@ class ImageGenerator:
         self._last_response = None
         pass
 
-    def generate_image(self, prompt, save_path=None):
+    def generate_image(self, prompt, save_path=None, size='lg'):
         """
 
         Args:
@@ -34,10 +34,18 @@ class ImageGenerator:
             url of generated image
 
         """
+        if size == 'lg':
+            real_size = '1024x1024'
+        elif size == 'md':
+            real_size = '512x512'
+        elif size == 'sm':
+            real_size='256x256'
+        else:
+            raise ValueError(f'Size {size} not valid, should be one of ["lg", "md", "sm"]')
         response = openai.Image.create(
             prompt=prompt,
             n=1,
-            size='1024x1024',
+            size=real_size,
         )
         self._last_response = response
 
@@ -59,8 +67,8 @@ class ImageGenerator:
     def display_image_from_file(self, filepath):
         display(Image(filename=filepath))
 
-    def generate_and_save_image(self, prompt, save_path, show=True):
-        image_url = self.generate_image(prompt, save_path)
+    def generate_and_save_image(self, prompt, save_path, show=True, size='lg'):
+        image_url = self.generate_image(prompt, save_path, size=size)
         self.save_image_from_url(image_url, save_path)
         if show:
             self.display_image_from_file(save_path)
