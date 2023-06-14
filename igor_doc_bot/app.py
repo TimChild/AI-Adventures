@@ -13,6 +13,7 @@ from langchain.prompts import PromptTemplate, SystemMessagePromptTemplate, Human
 import langchain.agents
 import os
 import datetime
+import argparse
 
 with open('../API_KEY', 'r') as f:
     os.environ['OPENAI_API_KEY'] = f.read()
@@ -97,7 +98,7 @@ def make_markdown(history, answer):
 
 
 # Build the app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], url_base_pathname='/igor-doc-bot/')
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], url_base_pathname='/igor-doc-bot/', title='Igor Doc Bot')
 
 
 history_store = dcc.Store(id='store-history', data=[])
@@ -159,16 +160,22 @@ def update_markdown(n_clicks, query, chat_history):
 
     return "", chat_history
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--live", action="store_true", help="Run in live mode")
+args = parser.parse_args()
 
 if __name__ == "__main__":
-    # app.run(
-    #     port=8085,
-    #     debug=True,
-    #     dev_tools_hot_reload=True,
-    # )
-    app.run(
-        host='0.0.0.0',
-        port=8080,
-        debug=False,
-        dev_tools_hot_reload=False,
-    )
+    if args.live:
+        app.run(
+            host='0.0.0.0',
+            port=8080,
+            debug=False,
+            dev_tools_hot_reload=False,
+        )
+    else:
+        app.title = f'Development - {app.title}'
+        app.run(
+            port=8085,
+            debug=True,
+            dev_tools_hot_reload=True,
+        )
