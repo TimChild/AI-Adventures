@@ -168,3 +168,4 @@ tofino_gpt/chat_history/
 tofino_gpt/image_history/
 langchain_test/rtdocs/
 *.png
+coding_assistant/functions/
