@@ -9,12 +9,6 @@ import importlib.util
 from typing import Callable
 
 
-with open("../API_KEY", "r") as f:
-    key = f.read()
-
-openai.api_key = key
-
-
 FUNCTIONS_FOLDER = "functions"
 os.makedirs(FUNCTIONS_FOLDER, exist_ok=True)
 
