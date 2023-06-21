@@ -377,3 +377,24 @@ def parse_igor_file(filename: str, verbose: bool = False) -> IgorFile:
 
 
 def parse_all_ipf_files(
+    directory: str, progress=False, verbose=False
+) -> list[IgorFile]:
+    """
+    Parses all IPF files in the given directory.
+
+    This function finds every file with the .ipf extension within the given directory,
+    and then applies the parse_igor_file function to each one.
+
+    Args:
+        directory (str): The path to the directory where the IPF files are located.
+
+    Returns:
+        None
+    """
+    path = Path(directory)
+    igor_files = []
+    for ipf_file in tqdm(path.glob("*.ipf")):
+        if progress:
+            print(ipf_file)
+        igor_files.append(parse_igor_file(str(ipf_file), verbose=verbose))
+    return igor_files
