@@ -156,6 +156,8 @@ def start_new_igor_object(
                and a string indicating the type of the object (either 'function', 'structure', or 'macro').
     """
     name = stripped_line.split(" ")[1].split("(")[0]
+    if name.strip().lower() == '/s':
+        name = stripped_line.split(" ")[2].split("(")[0]
     declaration = "".join(stripped_line.split(" ")[1:])
     stripped_line = stripped_line.lower()
     if stripped_line.startswith("function"):
@@ -287,7 +289,7 @@ def parse_igor_file(filename: str, verbose: bool = False) -> IgorFile:
                     print(f"Ignoring line: {line}")
 
     return IgorFile(
-        filename=filename,
+        filename=Path(filename).stem,
         preamble="".join(preamble),
         functions=functions,
         structures=structures,
