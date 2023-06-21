@@ -164,6 +164,7 @@ igor_doc_bot/chat_history/
 igor_doc_bot/faiss_dbs/
 igor_doc_bot/igor_help_files_txt/
 igor_doc_bot/pdfs/
+igor_doc_bot/IgorAcq_test/
 tofino_gpt/chat_history/
 tofino_gpt/image_history/
 langchain_test/rtdocs/
