@@ -294,7 +294,7 @@ def ask_autonomous_gpt(
                     )
                     print_colored_text(
                         inspect.getsource(new_func),
-                        "magenta",
+                        "yellow",
                     )
 
                 available_functions[new_func_name] = {
