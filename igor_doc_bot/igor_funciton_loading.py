@@ -4,94 +4,7 @@ from dataclasses import dataclass, asdict
 from typing import List
 import json
 from tqdm.auto import tqdm
-from IPython.display import Markdown, display
 from langchain.schema import Document
-
-
-# def extract_functions(filename: str) -> List[Function]:
-#     """
-#     Extracts function data from a file with given filename.
-
-#     Args:
-#         filename (str): The name of the file to extract functions from.
-
-#     Returns:
-#         list[Function]: List of `Function` dataclass instances representing functions in the file.
-#     """
-#     with open(filename, 'r') as f:
-#         lines = f.readlines()
-
-#     functions = []
-#     function_data = None
-#     docstring = None
-
-#     for i, line in enumerate(lines, start=1):
-#         stripped = line.strip()
-
-#         if stripped.startswith('function'):
-#             function_data, docstring = start_new_function(i, line, stripped_line=stripped)
-#         elif function_data and stripped.startswith('//'):
-#             docstring = accumulate_docstring(stripped, docstring)
-#             function_data.code.append(line)
-#         elif stripped == 'end':
-#             functions.append(end_current_function(function_data, docstring, i, filename))
-#             function_data, docstring = None, None
-#         elif function_data:  # We are inside a function block
-#             function_data.code.append(line)
-#         else:
-#             print(f'Ignoring: {line}')
-
-#     return functions
-
-
-# def start_new_function(line_number: int, line: str, stripped_line: str) -> Tuple[Function, List[str]]:
-#     """
-#     Starts processing a new function from the file.
-
-#     Args:
-#         line_number (int): The line number in the file where the function starts.
-#         line (str): The line of text in the file where the function starts.
-#         stripped_line (str): The line of text with leading/trailing whitespace removed.
-
-#     Returns:
-#         tuple: A tuple containing a `Function` dataclass instance representing the new function,
-#                and a list to accumulate the function's docstring.
-#     """
-#     return function_data, function_data.docstring
-
-
-# def accumulate_docstring(stripped_line: str, docstring: List[str]) -> List[str]:
-#     """
-#     Adds a line of text to a function's docstring.
-
-#     Args:
-#         stripped_line (str): The line of text to add to the docstring, with leading/trailing whitespace removed.
-#         docstring (List[str]): The list accumulating the function's docstring.
-
-#     Returns:
-#         List[str]: The updated docstring list.
-#     """
-#     docstring.append(stripped_line[2:].strip())
-#     return docstring
-
-# def end_current_function(function_data: Function, docstring: List[str], end_line: int, filename: str) -> Function:
-#     """
-#     Finalizes processing of a function.
-
-#     Args:
-#         function_data (Function): The `Function` dataclass instance representing the current function.
-#         docstring (List[str]): The list containing the function's docstring.
-#         end_line (int): The line number in the file where the function ends.
-#         filename (str): The name of the file.
-
-#     Returns:
-#         Function: The updated `Function` dataclass instance.
-#     """
-#     function_data.end_line = end_line
-#     function_data.filename = filename
-#     function_data.docstring = ' '.join(docstring)
-#     function_data.code = ''.join(function_data.code)
-#     return function_data
 
 
 @dataclass
@@ -101,8 +14,8 @@ class IgorObject:
     start_line: int
     end_line: int
     filename: str
-    docstring: str
-    code: str
+    docstring: str  # Note: use list when building, but convert to str after building
+    code: str  # Note: use list when building, but convert to str after building
 
     @property
     def metadata(self):
@@ -261,8 +174,8 @@ def start_new_igor_object(
         name=name,
         declaration=declaration,
         start_line=line_number,
-        code=[],
-        docstring=[],
+        code=[line], # Use list while building, then convert to string at end
+        docstring=[],  # Use list while building, then convert to string at end
         end_line=None,
         filename=None,
     )
@@ -325,7 +238,6 @@ def parse_igor_file(filename: str, verbose: bool = False) -> IgorFile:
     macros = []
     igor_object_data = None
     igor_object_list = None
-    docstring = None
 
     for i, line in enumerate(lines, start=1):
         stripped = line.strip()
@@ -335,6 +247,7 @@ def parse_igor_file(filename: str, verbose: bool = False) -> IgorFile:
         if stripped.lower().startswith("threadsafe"):
             stripped = stripped[10:].strip()
 
+        # Begin a new object
         if stripped.lower().startswith(("function", "structure", "window")):
             igor_object_data, object_type = start_new_igor_object(i, line, stripped)
             if verbose:
@@ -345,12 +258,15 @@ def parse_igor_file(filename: str, verbose: bool = False) -> IgorFile:
                 igor_object_list = structures
             elif object_type == "macro":
                 igor_object_list = macros
+        # Accumulate docstring
         elif (
             igor_object_data
             and stripped.startswith("//")
+            # Docstring should only accumulate at top of func (where code has additional declaration line)
             and (len(igor_object_data.code) - 1 == len(igor_object_data.docstring))
         ):
             accumulate_docstring(igor_object_data, line)
+        # End the current object
         elif stripped.lower() in ("end", "endstructure", "endmacro"):
             if verbose:
                 print(f"Finished adding {igor_object_data.name}")
@@ -358,10 +274,13 @@ def parse_igor_file(filename: str, verbose: bool = False) -> IgorFile:
                 end_current_igor_object(igor_object_data, i, filename)
             )
             igor_object_data, igor_object_list, docstring = None, None, None
+        # Add a line of code to the current object
         elif igor_object_data:  # We are inside an Igor object block
             igor_object_data.code.append(line)
+        # Add a line to the preamble
         elif all([len(l) == 0 for l in [functions, structures, macros]]):
             preamble.append(line)
+        # Ignore the line
         else:
             if verbose:
                 if line:
