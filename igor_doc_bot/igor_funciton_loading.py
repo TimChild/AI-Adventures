@@ -155,9 +155,12 @@ def start_new_igor_object(
         tuple: A tuple containing an `IgorObject` dataclass instance representing the new object,
                and a string indicating the type of the object (either 'function', 'structure', or 'macro').
     """
-    name = stripped_line.split(" ")[1].split("(")[0]
-    if name.strip().lower() == '/s':
-        name = stripped_line.split(" ")[2].split("(")[0]
+    # Split on any whitespace
+    name = stripped_line.split()[1].split("(")[0]
+    # Watch out for the functions that specify the return type
+    if name.strip().lower() in ['/s', '/t']:
+        name = stripped_line.split()[2].split("(")[0]
+
     declaration = "".join(stripped_line.split(" ")[1:])
     stripped_line = stripped_line.lower()
     if stripped_line.startswith("function"):
@@ -211,11 +214,15 @@ def end_current_igor_object(
         IgorObject: The updated `IgorObject` dataclass instance.
     """
     igor_object_data.end_line = end_line
-    igor_object_data.filename = filename
+    igor_object_data.filename = Path(filename).stem
     if igor_object_data.docstring:
         igor_object_data.docstring = "\n".join(igor_object_data.docstring)
+    else:
+        igor_object_data.docstring = ''
     if igor_object_data.code:
         igor_object_data.code = "".join(igor_object_data.code)
+    else:
+        igor_object_data.code = ''
     return igor_object_data
 
 
@@ -250,7 +257,7 @@ def parse_igor_file(filename: str, verbose: bool = False) -> IgorFile:
             stripped = stripped[10:].strip()
 
         # Begin a new object
-        if stripped.lower().startswith(("function", "structure", "window")):
+        if igor_object_data is None and stripped.lower().startswith(("function", "structure", "window")):
             igor_object_data, object_type = start_new_igor_object(i, line, stripped)
             if verbose:
                 print(f"Started adding {igor_object_data.name}")

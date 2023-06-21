@@ -171,3 +171,4 @@ langchain_test/rtdocs/
 *.png
 openai_quickstart/functions/
 igor_doc_bot/igor_code_jsons/
+*.npy
